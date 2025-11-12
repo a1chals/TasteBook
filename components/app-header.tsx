@@ -16,7 +16,7 @@ export function AppHeader({
   thisWeek = 0,
 }: AppHeaderProps) {
   return (
-    <div className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-violet-500 via-fuchsia-500 to-emerald-400 p-6 pb-8 text-white shadow-lg">
+    <div className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-slate-600 via-slate-500 to-emerald-400 p-6 pb-8 text-white shadow-lg">
       <div className="relative z-10">
         <div className="mb-6 flex items-center justify-between">
           <div>

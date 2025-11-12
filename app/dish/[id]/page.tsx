@@ -5,7 +5,7 @@ import { useDishStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import { BucketBadge } from '@/components/bucket-badge'
 import { ScoreChip } from '@/components/score-chip'
-import { BottomNav } from '@/components/bottom-nav'
+import { BottomNav3D } from '@/components/bottom-nav-3d'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -135,7 +135,7 @@ export default function DishPage({ params }: DishPageProps) {
                     key={index}
                     className="flex items-start gap-2 text-neutral-700"
                   >
-                    <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-500" />
+                    <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-600" />
                     <span>{ingredient}</span>
                   </li>
                 ))}
@@ -155,7 +155,7 @@ export default function DishPage({ params }: DishPageProps) {
                     href={dish.recipe}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-violet-600 underline hover:text-violet-700"
+                    className="text-slate-700 underline hover:text-slate-800"
                   >
                     View recipe →
                   </a>
@@ -207,7 +207,7 @@ export default function DishPage({ params }: DishPageProps) {
         </div>
       </div>
       
-      <BottomNav />
+      <BottomNav3D />
     </div>
   )
 }

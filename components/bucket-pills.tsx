@@ -10,14 +10,14 @@ interface BucketPillsProps {
 
 export function BucketPills({ selected, onSelect }: BucketPillsProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2">
+    <div className="flex gap-3 overflow-x-auto">
       <button
         onClick={() => onSelect('ALL')}
         className={cn(
-          'whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all',
+          'whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium transition-all tracking-wide',
           selected === 'ALL'
-            ? 'bg-neutral-900 text-white shadow-md'
-            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            ? 'bg-slate-600 text-white shadow-lg shadow-slate-200'
+            : 'bg-white text-neutral-700 hover:bg-neutral-50 border border-neutral-200 shadow-sm'
         )}
       >
         All
@@ -27,10 +27,10 @@ export function BucketPills({ selected, onSelect }: BucketPillsProps) {
           key={bucket.key}
           onClick={() => onSelect(bucket.key)}
           className={cn(
-            'whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all',
+            'whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium transition-all tracking-wide',
             selected === bucket.key
-              ? 'bg-neutral-900 text-white shadow-md'
-              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              ? 'bg-slate-600 text-white shadow-lg shadow-slate-200'
+              : 'bg-white text-neutral-700 hover:bg-neutral-50 border border-neutral-200 shadow-sm'
           )}
         >
           {bucket.label}

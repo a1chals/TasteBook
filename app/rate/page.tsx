@@ -4,20 +4,16 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDishStore } from '@/lib/store'
 import { BucketKey, BUCKETS } from '@/lib/types'
-import { SegmentedControl } from '@/components/segmented-control'
-import { BucketBadge } from '@/components/bucket-badge'
-import { BottomNav } from '@/components/bottom-nav'
+import { BottomNav3D } from '@/components/bottom-nav-3d'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card } from '@/components/ui/card'
-import { ArrowLeft, ArrowRight, Check, Upload } from 'lucide-react'
+import { ArrowLeft, Upload, Clock, FileText, Save } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/components/ui/use-toast'
-
-type Step = 1 | 2 | 3
+import { cn } from '@/lib/utils'
 
 export default function RatePage() {
   const router = useRouter()
@@ -25,36 +21,40 @@ export default function RatePage() {
   const addDish = useDishStore((state) => state.addDish)
   const getDishesByBucket = useDishStore((state) => state.getDishesByBucket)
   
-  const [step, setStep] = useState<Step>(1)
   const [bucket, setBucket] = useState<BucketKey>('AVERAGE')
   const [name, setName] = useState('')
   const [ingredients, setIngredients] = useState('')
   const [minutes, setMinutes] = useState('')
   const [recipe, setRecipe] = useState('')
+  const [notes, setNotes] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Create a local preview URL
+      const localUrl = URL.createObjectURL(file)
+      setImagePreview(localUrl)
+      
+      // For now, we'll use a placeholder URL since we're using mock data
+      // In production, you'd upload to Supabase storage here
+      setImageUrl(localUrl)
+      
+      toast({
+        title: 'Image selected',
+        description: 'Image preview loaded successfully.',
+      })
+    }
+  }
+  
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setImageUrl(value)
     if (value.startsWith('http')) {
       setImagePreview(value)
-    }
-  }
-  
-  const handleNext = () => {
-    if (step === 1) {
-      setStep(2)
-    } else if (step === 2) {
-      if (!name.trim()) {
-        toast({
-          title: 'Name required',
-          description: 'Please enter a name for your dish.',
-          variant: 'destructive',
-        })
-        return
-      }
-      setStep(3)
+    } else {
+      setImagePreview(null)
     }
   }
   
@@ -86,7 +86,7 @@ export default function RatePage() {
         .split('\n')
         .map((i) => i.trim())
         .filter(Boolean),
-      recipe: recipe.trim() || undefined,
+      recipe: recipe.trim() || notes.trim() || undefined,
       imageUrl: imageUrl.trim() || undefined,
     })
     
@@ -97,247 +97,178 @@ export default function RatePage() {
     
     router.push('/dishes')
   }
-  
-  const bucketDishes = getDishesByBucket(bucket)
-  const bucketConfig = BUCKETS.find((b) => b.key === bucket)
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-20">
-      <div className="sticky top-0 z-30 border-b border-neutral-200 bg-white/80 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-4">
-          {step === 1 ? (
-            <Link href="/">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-          ) : (
-            <Button variant="ghost" size="icon" onClick={() => setStep((s) => (s - 1) as Step)}>
+      {/* Header */}
+      <div className="border-b border-neutral-200/50 bg-white/80 backdrop-blur-lg sticky top-0 z-30">
+        <div className="mx-auto max-w-7xl px-8 py-5 flex items-center justify-between">
+          <Link href="/">
+            <Button variant="ghost" size="icon" className="hover:bg-neutral-100">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-          )}
-          <h1 className="text-xl font-semibold text-neutral-900">
-            Rate a Dish
-          </h1>
+          </Link>
+          <h1 className="text-sm font-medium uppercase tracking-wider text-neutral-600">Rate a Dish</h1>
           <div className="w-10" />
         </div>
-        
-        {/* Progress indicators */}
-        <div className="mx-auto flex max-w-md gap-1 px-4 pb-3">
-          {[1, 2, 3].map((s) => (
-            <div
-              key={s}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                s <= step ? 'bg-violet-500' : 'bg-neutral-200'
-              }`}
-            />
-          ))}
-        </div>
       </div>
-      
-      <div className="mx-auto max-w-md px-4 py-6">
-        {/* Step 1: Choose Bucket */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="mb-2 text-2xl font-bold text-neutral-900">
-                How was it?
-              </h2>
-              <p className="text-neutral-600">
-                Choose the category that best describes your dish.
-              </p>
-            </div>
-            
-            <div className="flex justify-center">
-              <SegmentedControl value={bucket} onChange={setBucket} />
-            </div>
-            
-            <Card className="bg-gradient-to-br from-violet-50 to-fuchsia-50 p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <BucketBadge bucket={bucket} />
-                <span className="text-sm font-medium text-neutral-700">
-                  Score range: {bucketConfig?.range[0]} - {bucketConfig?.range[1]}
-                </span>
-              </div>
-              <p className="text-sm text-neutral-600">
-                {bucket === 'NOT_GREAT' &&
-                  'Not quite there yet. These dishes need some work.'}
-                {bucket === 'AVERAGE' &&
-                  'Pretty good! Solid everyday dishes you enjoy.'}
-                {bucket === 'REALLY_GOOD' &&
-                  'Outstanding! Your best homemade creations.'}
-              </p>
-            </Card>
-            
-            <Button onClick={handleNext} className="w-full" size="lg">
-              Continue
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        )}
-        
-        {/* Step 2: Add Details */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="mb-2 text-2xl font-bold text-neutral-900">
-                Add details
-              </h2>
-              <p className="text-neutral-600">
-                Tell us about your dish.
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name" className="text-neutral-900">
-                  Dish name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., Grandma's Lasagna"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="ingredients" className="text-neutral-900">
-                  Ingredients (one per line)
-                </Label>
-                <Textarea
-                  id="ingredients"
-                  value={ingredients}
-                  onChange={(e) => setIngredients(e.target.value)}
-                  placeholder="Pasta&#10;Tomato sauce&#10;Ground beef&#10;Cheese"
-                  rows={5}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="minutes" className="text-neutral-900">
-                  Time to make (minutes)
-                </Label>
-                <Input
-                  id="minutes"
-                  type="number"
-                  value={minutes}
-                  onChange={(e) => setMinutes(e.target.value)}
-                  placeholder="30"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="recipe" className="text-neutral-900">
-                  Recipe (text or URL)
-                </Label>
-                <Textarea
-                  id="recipe"
-                  value={recipe}
-                  onChange={(e) => setRecipe(e.target.value)}
-                  placeholder="https://example.com/recipe or write your own..."
-                  rows={3}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="image" className="text-neutral-900">
-                  Image URL
-                </Label>
-                <Input
-                  id="image"
-                  value={imageUrl}
-                  onChange={handleImageChange}
-                  placeholder="https://example.com/image.jpg"
-                  className="mt-1"
-                />
-                {imagePreview && (
-                  <div className="mt-2 overflow-hidden rounded-lg">
+
+      {/* Main Content */}
+      <div className="h-[calc(100vh-81px-80px)] overflow-hidden">
+        <div className="h-full mx-auto max-w-7xl px-8 py-8">
+          <div className="grid lg:grid-cols-[1fr_1.3fr] gap-12 h-full">
+            {/* Left - Image Upload */}
+            <div className="flex flex-col gap-6 h-full">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload"
+              />
+              <label
+                htmlFor="file-upload"
+                className="flex-1 bg-white rounded-3xl overflow-hidden relative shadow-2xl border border-neutral-200/50 cursor-pointer hover:border-slate-400 transition-colors group"
+              >
+                {imagePreview ? (
+                  <>
                     <Image
                       src={imagePreview}
-                      alt="Preview"
-                      width={400}
-                      height={300}
-                      className="h-40 w-full object-cover"
+                      alt="Dish preview"
+                      fill
+                      className="object-cover"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="text-white text-center">
+                        <Upload className="h-12 w-12 mb-2 mx-auto stroke-[1.5]" />
+                        <p className="text-sm font-light tracking-wide">Click to change image</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-400 group-hover:text-slate-600 transition-colors">
+                    <Upload className="h-16 w-16 mb-4 stroke-[1.5]" />
+                    <p className="text-sm font-light tracking-wide">Click to upload image</p>
+                    <p className="text-xs text-neutral-400 mt-2">or paste URL below</p>
                   </div>
                 )}
+              </label>
+
+              <Input
+                id="image"
+                value={imageUrl.startsWith('blob:') ? '' : imageUrl}
+                onChange={handleImageUrlChange}
+                placeholder="Or paste image URL"
+                className="bg-white border-neutral-200 h-11 text-sm shadow-sm"
+              />
+
+              {/* Bucket Selector */}
+              <div className="flex gap-3">
+                {BUCKETS.map((b) => (
+                  <button
+                    key={b.key}
+                    onClick={() => setBucket(b.key)}
+                    className={cn(
+                      'flex-1 px-4 py-3 rounded-2xl border-2 transition-all font-medium text-sm tracking-wide',
+                      bucket === b.key
+                        ? 'border-slate-500 bg-slate-600 text-white shadow-lg shadow-slate-200'
+                        : 'border-neutral-200 bg-white hover:border-slate-400 hover:shadow-md text-neutral-700'
+                    )}
+                  >
+                    {b.label}
+                  </button>
+                ))}
               </div>
             </div>
-            
-            <Button onClick={handleNext} className="w-full" size="lg">
-              Continue
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        )}
-        
-        {/* Step 3: Confirm */}
-        {step === 3 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="mb-2 text-2xl font-bold text-neutral-900">
-                Ready to save?
-              </h2>
-              <p className="text-neutral-600">
-                Your dish will be added to <BucketBadge bucket={bucket} />
-              </p>
-            </div>
-            
-            <Card className="overflow-hidden">
-              {imagePreview && (
-                <div className="aspect-video w-full overflow-hidden bg-neutral-100">
-                  <Image
-                    src={imagePreview}
-                    alt={name}
-                    width={600}
-                    height={400}
-                    className="h-full w-full object-cover"
+
+            {/* Right - Details */}
+            <div className="flex flex-col gap-5 h-full">
+              {/* Info Cards */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Time */}
+                <div className="bg-white rounded-2xl p-5 border border-neutral-200/50 shadow-md hover:shadow-lg transition-shadow">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="bg-slate-50 rounded-full p-2">
+                      <Clock className="h-4 w-4 text-slate-600 stroke-[1.5]" />
+                    </div>
+                    <span className="text-xs uppercase tracking-wider text-neutral-500 font-medium">Time</span>
+                  </div>
+                  <Input
+                    type="number"
+                    value={minutes}
+                    onChange={(e) => setMinutes(e.target.value)}
+                    placeholder="30"
+                    className="bg-neutral-50/50 border-neutral-200 h-10 text-base"
                   />
+                  <p className="text-xs text-neutral-400 mt-2 tracking-wide">minutes</p>
                 </div>
-              )}
-              <div className="p-4">
-                <h3 className="mb-2 text-xl font-semibold text-neutral-900">
-                  {name}
-                </h3>
-                <div className="space-y-2 text-sm text-neutral-600">
-                  {minutes && <p>⏱️ {minutes} minutes</p>}
-                  {ingredients && (
-                    <p>
-                      🥘{' '}
-                      {ingredients
-                        .split('\n')
-                        .filter(Boolean)
-                        .slice(0, 3)
-                        .join(', ')}
-                      {ingredients.split('\n').filter(Boolean).length > 3 &&
-                        '...'}
-                    </p>
-                  )}
+
+                {/* Recipe Link */}
+                <div className="bg-white rounded-2xl p-5 border border-neutral-200/50 shadow-md hover:shadow-lg transition-shadow">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="bg-emerald-50 rounded-full p-2">
+                      <FileText className="h-4 w-4 text-emerald-500 stroke-[1.5]" />
+                    </div>
+                    <span className="text-xs uppercase tracking-wider text-neutral-500 font-medium">Recipe</span>
+                  </div>
+                  <Input
+                    value={recipe}
+                    onChange={(e) => setRecipe(e.target.value)}
+                    placeholder="URL"
+                    className="bg-neutral-50/50 border-neutral-200 h-10 text-base"
+                  />
+                  <p className="text-xs text-neutral-400 mt-2 tracking-wide">link</p>
                 </div>
               </div>
-            </Card>
-            
-            <Card className="bg-gradient-to-br from-violet-50 to-fuchsia-50 p-4">
-              <p className="text-sm text-neutral-700">
-                This dish will be added to your collection. You currently have{' '}
-                <strong>{bucketDishes.length} dishes</strong> in this category.
-              </p>
-            </Card>
-            
-            <Button onClick={handleSave} className="w-full" size="lg">
-              <Check className="mr-2 h-5 w-5" />
-              Save Dish
-            </Button>
+
+              {/* Notes */}
+              <div className="bg-white rounded-2xl p-5 border border-neutral-200/50 shadow-md">
+                <Label className="text-neutral-500 mb-3 block text-xs uppercase tracking-wider font-medium">Notes</Label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Special tips or observations..."
+                  rows={2}
+                  className="bg-neutral-50/50 border-neutral-200 resize-none text-sm"
+                />
+              </div>
+
+              {/* Ingredients */}
+              <div className="bg-white rounded-2xl p-5 border border-neutral-200/50 shadow-md flex-1 overflow-hidden flex flex-col">
+                <Label className="text-neutral-500 mb-3 block text-xs uppercase tracking-wider font-medium">Ingredients</Label>
+                <Textarea
+                  value={ingredients}
+                  onChange={(e) => setIngredients(e.target.value)}
+                  placeholder="Pasta&#10;Tomatoes&#10;Garlic"
+                  className="bg-neutral-50/50 border-neutral-200 resize-none font-mono text-sm flex-1"
+                />
+              </div>
+
+              {/* Dish Name */}
+              <div className="pt-2">
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="dish name"
+                  className="bg-transparent border-none text-5xl font-extralight placeholder:text-neutral-300 h-auto p-0 focus-visible:ring-0 tracking-tight"
+                />
+              </div>
+
+              {/* Save Button */}
+              <Button
+                onClick={handleSave}
+                className="w-full h-14 bg-gradient-to-r from-slate-600 via-slate-500 to-emerald-400 text-white hover:opacity-90 font-medium rounded-2xl shadow-lg shadow-slate-200 text-base tracking-wide"
+              >
+                <Save className="mr-2 h-5 w-5" />
+                Save Dish
+              </Button>
+            </div>
           </div>
-        )}
+          </div>
+        </div>
+
+          <BottomNav3D />
       </div>
-      
-      <BottomNav />
-    </div>
-  )
-}
+    )
+  }
