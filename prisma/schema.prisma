@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Bucket {
+  NOT_GREAT
+  AVERAGE
+  REALLY_GOOD
+}
+
+model Dish {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  bucket      Bucket
+  rankIndex   Int
+  score10     Float
+  minutes     Int?
+  ingredients Json?
+  recipe      String?  @db.Text
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, bucket, rankIndex])
+}
+
